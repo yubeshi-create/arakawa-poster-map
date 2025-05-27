@@ -84,8 +84,8 @@ function onLocationError(e) {
   // alert(e.message);
   const mapConfig = {
     '23-east': {
-      'lat': 35.7266074,
-      'long': 139.8292152,
+      'lat': 35.7368,
+      'long': 139.7832,
       'zoom': 14,
     },
     '23-west': {
@@ -167,7 +167,7 @@ map.on('locationerror', onLocationError);
 map.locate({setView: false, maxZoom: 14});
 
 // 荒川区の地図を確実に表示
-setTimeout(() => map.setView([35.7266074, 139.8292152], 14), 100);
+setTimeout(() => map.setView([35.7368, 139.7832], 14), 100);
 
 const block = getBlockFromUrlParam()
 const smallBlock= getSmallBlockFromUrlParam()
