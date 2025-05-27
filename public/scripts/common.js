@@ -111,3 +111,9 @@ const grayIcon = L.icon({
   className: "icon-gray",
 });
 
+function onLocationFound(e) {
+  var radius = e.accuracy / 2;
+  L.marker(e.latlng).addTo(map)
+    .bindPopup("現在地から " + Math.round(radius) + " メートル以内です").openPopup();
+  L.circle(e.latlng, radius).addTo(map);
+}
