@@ -166,6 +166,16 @@ map.on('locationfound', onLocationFound);
 map.on('locationerror', onLocationError);
 map.locate({setView: false, maxZoom: 14});
 
+// 荒川区の地図
+setTimeout(() => {
+  if (!map.getCenter) {
+    const block = getBlockFromUrlParam();
+    if (block === '23-east') {
+      map.setView([35.7266074, 139.8292152], 14);
+    }
+  }
+}, 1000);
+
 const block = getBlockFromUrlParam()
 const smallBlock= getSmallBlockFromUrlParam()
 let allBoardPins;
