@@ -107,10 +107,10 @@ async function loadArakawaBoundaries() {
           
           const data = await response.json();
           const polygon = L.geoJSON(data, {
-            color: '#666666',
-            fillColor: 'rgba(200, 200, 200, 0.1)',
-            fillOpacity: 0.2,
-            weight: 1,
+            color: '#333333',
+            fillColor: 'rgba(200, 200, 200, 0.15)',
+            fillOpacity: 0.3,
+            weight: 2.5,
           });
           
           polygon.bindPopup(`<b>${area.name}${cho}丁目</b>`);
