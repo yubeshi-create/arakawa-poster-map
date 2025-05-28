@@ -30,6 +30,10 @@ jobs:
         run: curl -sL "${{ secrets.CSV_URL }}" > public/data/all.csv
       - name: Convert CSV to JSON 
         run: python csv2json_small.py public/data/all.csv public/data/
+      - name: Calculate Progress
+        run: |
+          python summarize_progress.py public/data/summary.json
+          python summarize_progress_absolute.py public/data/summary_absolute.json
       - name: Commit & push changes
         run: |
           git add -N .
