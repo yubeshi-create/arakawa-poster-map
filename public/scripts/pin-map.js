@@ -1,3 +1,4 @@
+
 function getBlockFromUrlParam() {
   const params = new URL(document.location.href).searchParams
   const block = params.get("block")
@@ -78,6 +79,50 @@ async function loadBoardPins(pins, layer, status=null) {
     .addTo(layer);
     marker.bindPopup(`<b>${areaList[pin.area_id]["area_name"]} ${pin.name}</b><br>ステータス: ${getStatusText(pin.status)}<br>備考: ${getPinNote(pin.note)}<br>座標: <a href="https://www.google.com/maps/search/${pin.lat},+${pin.long}" target="_blank" rel="noopener noreferrer">(${pin.lat}, ${pin.long})</a>`);
   });
+}
+
+// 荒川区の町丁目境界線を読み込む関数
+async function loadArakawaBoundaries() {
+  try {
+    const areaList = await getAreaList();
+    
+    // 荒川区の町名リスト（実際の町名に基づく）
+    const arakawaAreas = [
+      { name: '荒川', cho_max: 8 },
+      { name: '町屋', cho_max: 8 },
+      { name: '東尾久', cho_max: 9 },
+      { name: '西尾久', cho_max: 8 },
+      { name: '東日暮里', cho_max: 6 },
+      { name: '西日暮里', cho_max: 6 },
+      { name: '南千住', cho_max: 8 }
+    ];
+
+    for (const area of arakawaAreas) {
+      for (let cho = 1; cho <= area.cho_max; cho++) {
+        const geoJsonUrl = `https://uedayou.net/loa/東京都荒川区${area.name}${cho}丁目.geojson`;
+        
+        try {
+          const response = await fetch(geoJsonUrl);
+          if (!response.ok) continue;
+          
+          const data = await response.json();
+          const polygon = L.geoJSON(data, {
+            color: '#666666',
+            fillColor: 'rgba(200, 200, 200, 0.1)',
+            fillOpacity: 0.2,
+            weight: 1,
+          });
+          
+          polygon.bindPopup(`<b>${area.name}${cho}丁目</b>`);
+          polygon.addTo(map);
+        } catch (error) {
+          console.warn(`Failed to load ${area.name}${cho}丁目:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('境界線読み込みエラー:', error);
+  }
 }
 
 function onLocationError(e) {
@@ -172,6 +217,8 @@ setTimeout(() => map.setView([35.7368, 139.7832], 14), 100);
 const block = getBlockFromUrlParam()
 const smallBlock= getSmallBlockFromUrlParam()
 let allBoardPins;
+
+// 掲示板ピンの読み込み
 getBoardPins(block, smallBlock).then(function(pins) {
   allBoardPins = pins
   loadBoardPins(allBoardPins, overlays['削除'], 6);
@@ -182,6 +229,7 @@ getBoardPins(block, smallBlock).then(function(pins) {
   loadBoardPins(allBoardPins, overlays['未'], 0);
 });
 
+// 進捗表示
 Promise.all([getProgress(), getProgressCountdown()]).then(function(res) {
   progress = res[0];
   progressCountdown = res[1];
@@ -191,4 +239,10 @@ Promise.all([getProgress(), getProgressCountdown()]).then(function(res) {
   console.error('Error in fetching data:', error);
 });
 
+// 期日前投票所とarakawa境界線の読み込み
 loadVoteVenuePins(overlays['期日前投票所']);
+
+// 荒川区が指定された場合のみ境界線を表示
+if (block === 'arakawa') {
+  loadArakawaBoundaries();
+}
