@@ -83,7 +83,7 @@ async function loadBoardPins(pins, layer, status=null) {
 function onLocationError(e) {
   // alert(e.message);
   const mapConfig = {
-    '23-east': {
+    'arakawa': {
       'lat': 35.7368,
       'long': 139.7832,
       'zoom': 14,
@@ -122,8 +122,8 @@ function onLocationError(e) {
   const block = getBlockFromUrlParam()
   let latlong, zoom;
   if (block == null) {
-    latlong = [35.6988862, 139.4649636],
-    zoom = 11
+    latlong = [35.7368, 139.7832],  // デフォルトも荒川区に設定
+    zoom = 14
   } else {
     latlong = [mapConfig[block]['lat'], mapConfig[block]['long']]
     zoom = mapConfig[block]['zoom']
