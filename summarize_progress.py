@@ -34,7 +34,7 @@ merged_df = all_areas.merge(status_counts, on='area', how='left')
 merged_df['progress'] = merged_df['progress'].fillna(0)
 merged_df = merged_df[['area_id', 'progress']].sort_values(by='area_id')
 
-result_dict = {int(row['area_id']): round(row['progress'], 5) for , row in merged_df.iterrows()}
+result_dict = {int(row['area_id']): round(row['progress'], 5) for _, row in merged_df.iterrows()}
 result_dict['total'] = round(overall_progress, 5)
 
 output_file_path = sys.argv[1]
