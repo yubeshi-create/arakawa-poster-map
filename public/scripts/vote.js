@@ -36,13 +36,14 @@ map.on('locationfound', onLocationFound);
 map.on('locationerror', onLocationError);
 map.locate({setView: false, maxZoom: 14});
 
+// 荒川区の地図を確実に表示
 setTimeout(() => map.setView([35.7368, 139.7832], 14), 100);
 
-// 荒川区のポリゴン表示（境界線）
+// 荒川区の境界線表示（シンプル版）
 Promise.all([getAreaList()]).then(function(res) {
   const areaList = res[0];
   
-  // 荒川区のみ
+  // 荒川区のみ処理（area_id: 7）
   const arakawaInfo = areaList[7];
   if (arakawaInfo) {
     fetch(`https://uedayou.net/loa/東京都${arakawaInfo['area_name']}.geojson`)
@@ -54,11 +55,12 @@ Promise.all([getAreaList()]).then(function(res) {
       })
       .then((data) => {
         const polygon = L.geoJSON(data, {
-          color: 'red',
-          fillColor: "red",
-          fillOpacity: 0.1,
+          color: '#333333',
+          fillColor: 'rgba(200, 200, 255, 0.1)',
+          fillOpacity: 0.3,
           weight: 2,
         });
+        polygon.bindPopup('<b>荒川区</b>');
         polygon.addTo(map);
       })
       .catch((error) => {
@@ -69,4 +71,5 @@ Promise.all([getAreaList()]).then(function(res) {
   console.error('Error in fetching data:', error);
 });
 
+// 期日前投票所のピンを読み込み
 loadVoteVenuePins(overlays['期日前投票所']);
