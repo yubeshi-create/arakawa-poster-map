@@ -110,9 +110,9 @@ async function loadArakawaBoundaries() {
             fillColor: 'rgba(200, 200, 200, 0.15)',
             fillOpacity: 0.3,
             weight: 2.5,
+            interactive: false,  // クリックイベントを無効化
           });
           
-          // ポップアップを設定しない（境界線のクリックを無効化）
           polygon.addTo(map);
         } catch (error) {
           console.warn(`Failed to load ${area.name}${cho}丁目:`, error);
@@ -166,7 +166,7 @@ function onLocationError(e) {
   const block = getBlockFromUrlParam()
   let latlong, zoom;
   if (block == null) {
-    latlong = [35.7368, 139.7832],  // デフォルトも荒川区に設定
+    latlong = [35.7368, 139.7832],  // デフォルト荒川区に設定
     zoom = 14
   } else {
     latlong = [mapConfig[block]['lat'], mapConfig[block]['long']]
