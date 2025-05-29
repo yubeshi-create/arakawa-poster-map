@@ -1,12 +1,12 @@
 name: Update Map Data
-
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # 手動実行（既存）
+  schedule:
+    - cron: '*/5 * * * *'  # 5分おきに自動実行
   
 permissions:
   contents: write
   id-token: write
-
 jobs:
   update:
     environment:
@@ -42,6 +42,6 @@ jobs:
             git config user.name github-actions
             git config user.email github-actions@github.com
             git add .
-            git commit -m "Update"
+            git commit -m "Auto update from LINE report"
             git push
           fi
