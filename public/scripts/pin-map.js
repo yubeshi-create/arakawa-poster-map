@@ -320,7 +320,6 @@ map.addControl(new locationControl({ position: 'topleft' }));
 
 map.on('locationfound', onLocationFound);
 map.on('locationerror', onLocationError);
-map.locate({setView: false, maxZoom: 14});
 
 // 荒川区の地図を確実に表示
 setTimeout(() => map.setView([35.7368, 139.7832], 14), 100);
