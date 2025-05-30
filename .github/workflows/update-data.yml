@@ -2,7 +2,7 @@ name: Update Map Data
 on:
   workflow_dispatch:  # 手動実行（既存）
   schedule:
-    - cron: '*/5 * * * *'  # 5分おきに自動実行
+    - cron: '*/6 * * * *'  # 6分間隔（完全に一貫）
   
 permissions:
   contents: write
