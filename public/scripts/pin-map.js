@@ -312,7 +312,7 @@ var map = L.map('map', {
   ],
   preferCanvas:true,
 });
-japanBaseMap.addTo(map);
+osm.addTo(map);
 const layerControl = L.control.layers(baseLayers, overlays).addTo(map);
 
 // 現在地ボタンを地図に追加
