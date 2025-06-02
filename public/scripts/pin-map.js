@@ -424,16 +424,36 @@ const block = getBlockFromUrlParam()
 const smallBlock= getSmallBlockFromUrlParam()
 let allBoardPins;
 
-// 掲示板ピンの読み込み
-getBoardPins(block, smallBlock).then(function(pins) {
-  allBoardPins = pins
-  loadBoardPins(allBoardPins, overlays['削除'], 6);
-  loadBoardPins(allBoardPins, overlays['完了'], 1);
-  loadBoardPins(allBoardPins, overlays['異常'], 2);
-  loadBoardPins(allBoardPins, overlays['要確認'], 4);
-  loadBoardPins(allBoardPins, overlays['異常対応中'], 5);
-  loadBoardPins(allBoardPins, overlays['未'], 0);
-});
+// 荒川区の場合は読み込み順序を調整
+if (block === 'arakawa') {
+  // 荒川区：先にヒートマップ、後にピン
+  getBoardPins(block, smallBlock).then(function(pins) {
+    allBoardPins = pins;
+    
+    // 1. 先にヒートマップを描画（背景として）
+    loadArakawaBoundaries();
+    boardProgressLegend().addTo(map);
+    
+    // 2. その後にピンを描画（前景として、クリック可能）
+    loadBoardPins(allBoardPins, overlays['削除'], 6);
+    loadBoardPins(allBoardPins, overlays['完了'], 1);
+    loadBoardPins(allBoardPins, overlays['異常'], 2);
+    loadBoardPins(allBoardPins, overlays['要確認'], 4);
+    loadBoardPins(allBoardPins, overlays['異常対応中'], 5);
+    loadBoardPins(allBoardPins, overlays['未'], 0);
+  });
+} else {
+  // その他の地域：従来通り
+  getBoardPins(block, smallBlock).then(function(pins) {
+    allBoardPins = pins
+    loadBoardPins(allBoardPins, overlays['削除'], 6);
+    loadBoardPins(allBoardPins, overlays['完了'], 1);
+    loadBoardPins(allBoardPins, overlays['異常'], 2);
+    loadBoardPins(allBoardPins, overlays['要確認'], 4);
+    loadBoardPins(allBoardPins, overlays['異常対応中'], 5);
+    loadBoardPins(allBoardPins, overlays['未'], 0);
+  });
+}
 
 // 進捗表示
 Promise.all([getProgress(), getProgressCountdown()]).then(function(res) {
@@ -445,12 +465,5 @@ Promise.all([getProgress(), getProgressCountdown()]).then(function(res) {
   console.error('Error in fetching data:', error);
 });
 
-// 期日前投票所とarakawa境界線の読み込み
+// 期日前投票所の読み込み
 loadVoteVenuePins(overlays['期日前投票所']);
-
-// 荒川区が指定された場合のみ境界線を表示
-if (block === 'arakawa') {
-  loadArakawaBoundaries();
-  // 凡例表示
-  boardProgressLegend().addTo(map);
-}
