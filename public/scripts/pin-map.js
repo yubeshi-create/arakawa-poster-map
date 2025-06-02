@@ -74,161 +74,15 @@ async function loadBoardPins(pins, layer, status=null) {
       fillColor: `${getStatusColor(pin.status)}`,
       fillOpacity: 0.9,
       border: 1,
-      // 追加：ピン専用paneに配置
-      pane: 'pinPane'
     })
     .addTo(layer);
     marker.bindPopup(`<b>${pin.name}</b><br>ステータス: ${getStatusText(pin.status)}<br>備考: ${getPinNote(pin.note)}<br>座標: <a href="https://www.google.com/maps/search/${pin.lat},+${pin.long}" target="_blank" rel="noopener noreferrer">(${pin.lat}, ${pin.long})</a>`);
   });
 }
 
-// ===== 進捗ヒートマップ機能 =====
-
-// ポスティングマップから流用：色分けロジック
-function getProgressColor(percentage) {
-    const colorStops = [
-        { pct: 0.0, color: { r: 227, g: 250, b: 254 } },
-        { pct: 0.25, color: { r: 210, g: 237, b: 253 } },
-        { pct: 0.5, color: { r: 115, g: 197, b: 251 } },
-        { pct: 0.75, color: { r: 66, g: 176, b: 250 } },
-        { pct: 0.999, color: { r: 12, g: 153, b: 247 } },
-        { pct: 1.0, color: { r: 4, g: 97, b: 159 } }
-    ];
-
-    percentage = Math.max(0, Math.min(1, percentage));
-
-    let lower = colorStops[0];
-    let upper = colorStops[colorStops.length - 1];
-
-    for (let i = 1; i < colorStops.length; i++) {
-        if (percentage <= colorStops[i].pct) {
-            upper = colorStops[i];
-            lower = colorStops[i - 1];
-            break;
-        }
-    }
-
-    const rangePct = (percentage - lower.pct) / (upper.pct - lower.pct);
-    const r = Math.round(lower.color.r + rangePct * (upper.color.r - lower.color.r));
-    const g = Math.round(lower.color.g + rangePct * (upper.color.g - lower.color.g));
-    const b = Math.round(lower.color.b + rangePct * (upper.color.b - lower.color.b));
-
-    return `rgb(${r}, ${g}, ${b})`;
-}
-
-// GeoJSONスタイル
-function getBoardGeoJsonStyle(progress) {
-  return {
-    color: 'black',
-    fillColor: getProgressColor(progress),
-    fillOpacity: 0.7,
-    weight: 2,
-    pane: 'heatmapPane'
-  }
-}
-
-// 凡例
-function boardLegend() {
-  var control = L.control({position: 'bottomright'});
-  control.onAdd = function () {
-      var div = L.DomUtil.create('div', 'info legend')
-      grades = [1, 0.75, 0.5, 0.25, 0]
-
-      div.innerHTML += '<p>進捗率</p>';
-
-      var legendInnerContainerDiv = L.DomUtil.create('div', 'legend-inner-container', div);
-      legendInnerContainerDiv.innerHTML += '<div class="legend-gradient"></div>';
-
-      var labelsDiv = L.DomUtil.create('div', 'legend-labels', legendInnerContainerDiv);
-      for (var i = 0; i < grades.length; i++) {
-        labelsDiv.innerHTML += '<span>' + grades[i] * 100 + '%</span>';
-      }
-      labelsDiv.innerHTML += '<span>未着手</span>'
-      return div;
-  };
-
-  return control
-}
-
-// 地区ID→地区名変換マッピング（荒川区用）
-let areaIdToNameMapping = null;
-
-// 地区IDから地区名に変換
-async function getAreaNameFromId(areaId) {
-  if (!areaIdToNameMapping) {
-    // 初回のみマッピングを作成
-    const areaList = await getAreaList();
-    areaIdToNameMapping = {};
-    
-    for (const [key, areaInfo] of Object.entries(areaList)) {
-      const cho_max_number = Number(areaInfo['area_cho_max_number']);
-      
-      for (let cho_index = 0; cho_index < cho_max_number; cho_index++) {
-        let cho_number = cho_index + 1;
-        const areaName = cho_max_number === 1 ? 
-          areaInfo['area_name'] : 
-          `${areaInfo['area_name']}${cho_number}丁目`;
-        
-        areaIdToNameMapping[key] = areaName;
-      }
-    }
-    
-    console.log('地区ID→名前マッピング:', areaIdToNameMapping);
-  }
-  
-  return areaIdToNameMapping[areaId] || 'その他';
-}
-
-// 修正版：ピンから地区名を抽出
-async function extractAreaNameFromPin(pin) {
-  // ピンのnameは "1-1" のような形式なので、area_idを使用
-  const areaId = pin.area_id;
-  const areaName = await getAreaNameFromId(areaId);
-  console.log(`ピン ${pin.name}: area_id=${areaId} → 地区名=${areaName}`);
-  return areaName;
-}
-
-// 修正版：進捗計算（地区IDベース）
-async function calculateAreaProgress(pins, targetAreaName) {
-  console.log(`=== ${targetAreaName} の進捗計算開始 ===`);
-  console.log(`全ピン数: ${pins ? pins.length : 0}`);
-  
-  if (!pins || pins.length === 0) {
-    console.log(`${targetAreaName}: ピンデータなし`);
-    return 0;
-  }
-  
-  // 各ピンの地区名を確認
-  const areaPins = [];
-  for (const pin of pins) {
-    const pinAreaName = await extractAreaNameFromPin(pin);
-    if (pinAreaName === targetAreaName) {
-      areaPins.push(pin);
-    }
-  }
-  
-  console.log(`${targetAreaName}のピン数: ${areaPins.length}`);
-  
-  if (areaPins.length === 0) {
-    console.log(`${targetAreaName}: 該当ピンなし`);
-    return 0;
-  }
-  
-  const completed = areaPins.filter(pin => pin.status === 1).length;
-  const progress = completed / areaPins.length;
-  
-  console.log(`${targetAreaName}: 完了 ${completed}/${areaPins.length} = ${(progress * 100).toFixed(1)}%`);
-  console.log(`${targetAreaName}の色: ${getProgressColor(progress)}`);
-  
-  return progress;
-}
-
-// 修正版：進捗ヒートマップ対応版：荒川区の町丁目境界線を読み込む関数
+// 荒川区の町丁目境界線を読み込む関数
 async function loadArakawaBoundaries() {
   try {
-    console.log('=== 掲示板進捗ヒートマップ読み込み開始 ===');
-    console.log('allBoardPins:', allBoardPins ? `${allBoardPins.length}件` : 'undefined');
-    
     const areaList = await getAreaList();
     
     // 荒川区の町名リスト（実際の町名に基づく）
@@ -242,71 +96,31 @@ async function loadArakawaBoundaries() {
       { name: '南千住', cho_max: 8 }
     ];
 
-    let successCount = 0;
-
     for (const area of arakawaAreas) {
       for (let cho = 1; cho <= area.cho_max; cho++) {
-        const areaName = `${area.name}${cho}丁目`;
-        const geoJsonUrl = `https://uedayou.net/loa/東京都荒川区${areaName}.geojson`;
+        const geoJsonUrl = `https://uedayou.net/loa/東京都荒川区${area.name}${cho}丁目.geojson`;
         
         try {
           const response = await fetch(geoJsonUrl);
-          if (!response.ok) {
-            console.warn(`${areaName}: ${response.status}`);
-            continue;
-          }
+          if (!response.ok) continue;
           
           const data = await response.json();
-          
-          // 進捗率計算（修正版）
-          const progressValue = allBoardPins ? await calculateAreaProgress(allBoardPins, areaName) : 0;
-          console.log(`${areaName}: 最終進捗率 = ${(progressValue * 100).toFixed(1)}%`);
-          
-          // ポリゴン作成（ポスティングマップと同じスタイル）
           const polygon = L.geoJSON(data, {
-            style: getBoardGeoJsonStyle(progressValue)
+            color: '#333333',
+            fillColor: 'rgba(200, 200, 200, 0.15)',
+            fillOpacity: 0.3,
+            weight: 2.5,
+            interactive: false,  // クリックイベントを無効化
           });
           
-          // ポップアップ内容（修正版）
-          let completedCount = 0;
-          let totalCount = 0;
-          
-          if (allBoardPins) {
-            for (const pin of allBoardPins) {
-              const pinAreaName = await extractAreaNameFromPin(pin);
-              if (pinAreaName === areaName) {
-                totalCount++;
-                if (pin.status === 1) completedCount++;
-              }
-            }
-          }
-          
-          const popupContent = `
-            <b>${areaName}</b><br>
-            掲示板進捗: ${(progressValue * 100).toFixed(1)}%<br>
-            完了: ${completedCount}ヶ所<br>
-            残り: ${totalCount - completedCount}ヶ所<br>
-            総数: ${totalCount}ヶ所
-          `;
-          
-          polygon.bindPopup(popupContent);
           polygon.addTo(map);
-          
-          successCount++;
-          
         } catch (error) {
-          console.warn(`${areaName}: ${error.message}`);
+          console.warn(`Failed to load ${area.name}${cho}丁目:`, error);
         }
-        
-        // サーバー負荷軽減
-        await new Promise(resolve => setTimeout(resolve, 50));
       }
     }
-    
-    console.log(`=== ヒートマップ読み込み完了: ${successCount}件 ===`);
-    
   } catch (error) {
-    console.error('ヒートマップ読み込みエラー:', error);
+    console.error('境界線読み込みエラー:', error);
   }
 }
 
@@ -382,7 +196,7 @@ let currentLocationMarker = null;
 
 // 現在地アイコンの定義
 const currentLocationIcon = L.icon({
-  iconUrl: 'data:image/svg+xml;base64=' + btoa(`
+  iconUrl: 'data:image/svg+xml;base64,' + btoa(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="blue" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="10"/>
       <circle cx="12" cy="12" r="3" fill="blue"/>
@@ -498,14 +312,6 @@ var map = L.map('map', {
   ],
   preferCanvas:true,
 });
-
-// カスタムpane作成でレイヤー順序を制御
-map.createPane('heatmapPane');
-map.getPane('heatmapPane').style.zIndex = 200; // 背景レイヤー
-
-map.createPane('pinPane');
-map.getPane('pinPane').style.zIndex = 650; // 前景レイヤー
-
 osm.addTo(map);
 const layerControl = L.control.layers(baseLayers, overlays).addTo(map);
 
@@ -522,53 +328,16 @@ const block = getBlockFromUrlParam()
 const smallBlock= getSmallBlockFromUrlParam()
 let allBoardPins;
 
-// 荒川区の場合は読み込み順序を調整
-if (block === 'arakawa') {
-  // 荒川区：データ読み込み後、ヒートマップ→ピンの順で描画
-  getBoardPins(block, smallBlock).then(async function(pins) {
-    console.log('=== 荒川区データ読み込み完了 ===');
-    console.log('取得したピン数:', pins.length);
-    
-    // サンプルピンの詳細ログ
-    if (pins.length > 0) {
-      console.log('サンプルピン詳細:', pins[0]);
-    }
-    
-    allBoardPins = pins;
-    
-    // 少し待機してからヒートマップを描画
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // 1. 先にヒートマップを描画（背景）
-    console.log('ヒートマップ描画開始...');
-    await loadArakawaBoundaries();
-    
-    // 2. 凡例を追加
-    boardLegend().addTo(map);
-    
-    // 3. 後でピンを描画（前景、クリック可能）
-    console.log('ピン描画開始...');
-    loadBoardPins(allBoardPins, overlays['削除'], 6);
-    loadBoardPins(allBoardPins, overlays['完了'], 1);
-    loadBoardPins(allBoardPins, overlays['異常'], 2);
-    loadBoardPins(allBoardPins, overlays['要確認'], 4);
-    loadBoardPins(allBoardPins, overlays['異常対応中'], 5);
-    loadBoardPins(allBoardPins, overlays['未'], 0);
-    
-    console.log('=== 荒川区表示完了 ===');
-  });
-} else {
-  // その他の地域は従来通り
-  getBoardPins(block, smallBlock).then(function(pins) {
-    allBoardPins = pins
-    loadBoardPins(allBoardPins, overlays['削除'], 6);
-    loadBoardPins(allBoardPins, overlays['完了'], 1);
-    loadBoardPins(allBoardPins, overlays['異常'], 2);
-    loadBoardPins(allBoardPins, overlays['要確認'], 4);
-    loadBoardPins(allBoardPins, overlays['異常対応中'], 5);
-    loadBoardPins(allBoardPins, overlays['未'], 0);
-  });
-}
+// 掲示板ピンの読み込み
+getBoardPins(block, smallBlock).then(function(pins) {
+  allBoardPins = pins
+  loadBoardPins(allBoardPins, overlays['削除'], 6);
+  loadBoardPins(allBoardPins, overlays['完了'], 1);
+  loadBoardPins(allBoardPins, overlays['異常'], 2);
+  loadBoardPins(allBoardPins, overlays['要確認'], 4);
+  loadBoardPins(allBoardPins, overlays['異常対応中'], 5);
+  loadBoardPins(allBoardPins, overlays['未'], 0);
+});
 
 // 進捗表示
 Promise.all([getProgress(), getProgressCountdown()]).then(function(res) {
@@ -580,5 +349,10 @@ Promise.all([getProgress(), getProgressCountdown()]).then(function(res) {
   console.error('Error in fetching data:', error);
 });
 
-// 期日前投票所の読み込み
+// 期日前投票所とarakawa境界線の読み込み
 loadVoteVenuePins(overlays['期日前投票所']);
+
+// 荒川区が指定された場合のみ境界線を表示
+if (block === 'arakawa') {
+  loadArakawaBoundaries();
+}
