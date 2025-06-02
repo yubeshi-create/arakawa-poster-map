@@ -150,22 +150,46 @@ function boardLegend() {
   return control
 }
 
-// 進捗計算
+// 進捗計算（デバッグ付き）
 function extractAreaNameFromPin(pinName) {
   const parts = pinName.split('-');
-  return parts[0] || 'その他';
+  const areaName = parts[0] || 'その他';
+  return areaName;
 }
 
 function calculateAreaProgress(pins, areaName) {
+  console.log(`=== ${areaName} の進捗計算開始 ===`);
+  console.log(`全ピン数: ${pins ? pins.length : 0}`);
+  
+  if (!pins || pins.length === 0) {
+    console.log(`${areaName}: ピンデータなし`);
+    return 0;
+  }
+  
+  // サンプルピンの内容確認
+  if (pins.length > 0) {
+    console.log('サンプルピン:', pins[0]);
+    console.log('サンプルピン名:', pins[0].name);
+    console.log('抽出された地区名:', extractAreaNameFromPin(pins[0].name));
+  }
+  
   const areaPins = pins.filter(pin => {
     const pinAreaName = extractAreaNameFromPin(pin.name);
     return pinAreaName === areaName;
   });
   
-  if (areaPins.length === 0) return 0;
+  console.log(`${areaName}のピン数: ${areaPins.length}`);
+  
+  if (areaPins.length === 0) {
+    console.log(`${areaName}: 該当ピンなし`);
+    return 0;
+  }
   
   const completed = areaPins.filter(pin => pin.status === 1).length;
   const progress = completed / areaPins.length;
+  
+  console.log(`${areaName}: 完了 ${completed}/${areaPins.length} = ${(progress * 100).toFixed(1)}%`);
+  console.log(`${areaName}の色: ${getProgressColor(progress)}`);
   
   return progress;
 }
@@ -173,7 +197,9 @@ function calculateAreaProgress(pins, areaName) {
 // 進捗ヒートマップ対応版：荒川区の町丁目境界線を読み込む関数
 async function loadArakawaBoundaries() {
   try {
-    console.log('掲示板進捗ヒートマップ読み込み開始');
+    console.log('=== 掲示板進捗ヒートマップ読み込み開始 ===');
+    console.log('allBoardPins:', allBoardPins ? `${allBoardPins.length}件` : 'undefined');
+    
     const areaList = await getAreaList();
     
     // 荒川区の町名リスト（実際の町名に基づく）
@@ -205,6 +231,7 @@ async function loadArakawaBoundaries() {
           
           // 進捗率計算（掲示板データから）
           const progressValue = allBoardPins ? calculateAreaProgress(allBoardPins, areaName) : 0;
+          console.log(`${areaName}: 最終進捗率 = ${(progressValue * 100).toFixed(1)}%`);
           
           // ポリゴン作成（ポスティングマップと同じスタイル）
           const polygon = L.geoJSON(data, {
@@ -239,7 +266,7 @@ async function loadArakawaBoundaries() {
       }
     }
     
-    console.log(`ヒートマップ読み込み完了: ${successCount}件`);
+    console.log(`=== ヒートマップ読み込み完了: ${successCount}件 ===`);
     
   } catch (error) {
     console.error('ヒートマップ読み込みエラー:', error);
@@ -461,22 +488,32 @@ let allBoardPins;
 // 荒川区の場合は読み込み順序を調整
 if (block === 'arakawa') {
   // 荒川区：データ読み込み後、ヒートマップ→ピンの順で描画
-  getBoardPins(block, smallBlock).then(function(pins) {
+  getBoardPins(block, smallBlock).then(async function(pins) {
+    console.log('=== 荒川区データ読み込み完了 ===');
+    console.log('取得したピン数:', pins.length);
+    
     allBoardPins = pins;
     
+    // 少し待機してからヒートマップを描画
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     // 1. 先にヒートマップを描画（背景）
-    loadArakawaBoundaries();
+    console.log('ヒートマップ描画開始...');
+    await loadArakawaBoundaries();
     
     // 2. 凡例を追加
     boardLegend().addTo(map);
     
     // 3. 後でピンを描画（前景、クリック可能）
+    console.log('ピン描画開始...');
     loadBoardPins(allBoardPins, overlays['削除'], 6);
     loadBoardPins(allBoardPins, overlays['完了'], 1);
     loadBoardPins(allBoardPins, overlays['異常'], 2);
     loadBoardPins(allBoardPins, overlays['要確認'], 4);
     loadBoardPins(allBoardPins, overlays['異常対応中'], 5);
     loadBoardPins(allBoardPins, overlays['未'], 0);
+    
+    console.log('=== 荒川区表示完了 ===');
   });
 } else {
   // その他の地域は従来通り
