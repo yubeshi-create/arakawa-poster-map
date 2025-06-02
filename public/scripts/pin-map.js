@@ -150,51 +150,80 @@ function boardLegend() {
   return control
 }
 
-// 進捗計算（デバッグ付き）
-function extractAreaNameFromPin(pinName) {
-  const parts = pinName.split('-');
-  const areaName = parts[0] || 'その他';
+// 地区ID→地区名変換マッピング（荒川区用）
+let areaIdToNameMapping = null;
+
+// 地区IDから地区名に変換
+async function getAreaNameFromId(areaId) {
+  if (!areaIdToNameMapping) {
+    // 初回のみマッピングを作成
+    const areaList = await getAreaList();
+    areaIdToNameMapping = {};
+    
+    for (const [key, areaInfo] of Object.entries(areaList)) {
+      const cho_max_number = Number(areaInfo['area_cho_max_number']);
+      
+      for (let cho_index = 0; cho_index < cho_max_number; cho_index++) {
+        let cho_number = cho_index + 1;
+        const areaName = cho_max_number === 1 ? 
+          areaInfo['area_name'] : 
+          `${areaInfo['area_name']}${cho_number}丁目`;
+        
+        areaIdToNameMapping[key] = areaName;
+      }
+    }
+    
+    console.log('地区ID→名前マッピング:', areaIdToNameMapping);
+  }
+  
+  return areaIdToNameMapping[areaId] || 'その他';
+}
+
+// 修正版：ピンから地区名を抽出
+async function extractAreaNameFromPin(pin) {
+  // ピンのnameは "1-1" のような形式なので、area_idを使用
+  const areaId = pin.area_id;
+  const areaName = await getAreaNameFromId(areaId);
+  console.log(`ピン ${pin.name}: area_id=${areaId} → 地区名=${areaName}`);
   return areaName;
 }
 
-function calculateAreaProgress(pins, areaName) {
-  console.log(`=== ${areaName} の進捗計算開始 ===`);
+// 修正版：進捗計算（地区IDベース）
+async function calculateAreaProgress(pins, targetAreaName) {
+  console.log(`=== ${targetAreaName} の進捗計算開始 ===`);
   console.log(`全ピン数: ${pins ? pins.length : 0}`);
   
   if (!pins || pins.length === 0) {
-    console.log(`${areaName}: ピンデータなし`);
+    console.log(`${targetAreaName}: ピンデータなし`);
     return 0;
   }
   
-  // サンプルピンの内容確認
-  if (pins.length > 0) {
-    console.log('サンプルピン:', pins[0]);
-    console.log('サンプルピン名:', pins[0].name);
-    console.log('抽出された地区名:', extractAreaNameFromPin(pins[0].name));
+  // 各ピンの地区名を確認
+  const areaPins = [];
+  for (const pin of pins) {
+    const pinAreaName = await extractAreaNameFromPin(pin);
+    if (pinAreaName === targetAreaName) {
+      areaPins.push(pin);
+    }
   }
   
-  const areaPins = pins.filter(pin => {
-    const pinAreaName = extractAreaNameFromPin(pin.name);
-    return pinAreaName === areaName;
-  });
-  
-  console.log(`${areaName}のピン数: ${areaPins.length}`);
+  console.log(`${targetAreaName}のピン数: ${areaPins.length}`);
   
   if (areaPins.length === 0) {
-    console.log(`${areaName}: 該当ピンなし`);
+    console.log(`${targetAreaName}: 該当ピンなし`);
     return 0;
   }
   
   const completed = areaPins.filter(pin => pin.status === 1).length;
   const progress = completed / areaPins.length;
   
-  console.log(`${areaName}: 完了 ${completed}/${areaPins.length} = ${(progress * 100).toFixed(1)}%`);
-  console.log(`${areaName}の色: ${getProgressColor(progress)}`);
+  console.log(`${targetAreaName}: 完了 ${completed}/${areaPins.length} = ${(progress * 100).toFixed(1)}%`);
+  console.log(`${targetAreaName}の色: ${getProgressColor(progress)}`);
   
   return progress;
 }
 
-// 進捗ヒートマップ対応版：荒川区の町丁目境界線を読み込む関数
+// 修正版：進捗ヒートマップ対応版：荒川区の町丁目境界線を読み込む関数
 async function loadArakawaBoundaries() {
   try {
     console.log('=== 掲示板進捗ヒートマップ読み込み開始 ===');
@@ -229,8 +258,8 @@ async function loadArakawaBoundaries() {
           
           const data = await response.json();
           
-          // 進捗率計算（掲示板データから）
-          const progressValue = allBoardPins ? calculateAreaProgress(allBoardPins, areaName) : 0;
+          // 進捗率計算（修正版）
+          const progressValue = allBoardPins ? await calculateAreaProgress(allBoardPins, areaName) : 0;
           console.log(`${areaName}: 最終進捗率 = ${(progressValue * 100).toFixed(1)}%`);
           
           // ポリゴン作成（ポスティングマップと同じスタイル）
@@ -238,11 +267,19 @@ async function loadArakawaBoundaries() {
             style: getBoardGeoJsonStyle(progressValue)
           });
           
-          // ポップアップ内容
-          const completedCount = allBoardPins ? 
-            allBoardPins.filter(pin => extractAreaNameFromPin(pin.name) === areaName && pin.status === 1).length : 0;
-          const totalCount = allBoardPins ? 
-            allBoardPins.filter(pin => extractAreaNameFromPin(pin.name) === areaName).length : 0;
+          // ポップアップ内容（修正版）
+          let completedCount = 0;
+          let totalCount = 0;
+          
+          if (allBoardPins) {
+            for (const pin of allBoardPins) {
+              const pinAreaName = await extractAreaNameFromPin(pin);
+              if (pinAreaName === areaName) {
+                totalCount++;
+                if (pin.status === 1) completedCount++;
+              }
+            }
+          }
           
           const popupContent = `
             <b>${areaName}</b><br>
@@ -491,6 +528,11 @@ if (block === 'arakawa') {
   getBoardPins(block, smallBlock).then(async function(pins) {
     console.log('=== 荒川区データ読み込み完了 ===');
     console.log('取得したピン数:', pins.length);
+    
+    // サンプルピンの詳細ログ
+    if (pins.length > 0) {
+      console.log('サンプルピン詳細:', pins[0]);
+    }
     
     allBoardPins = pins;
     
