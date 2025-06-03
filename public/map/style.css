@@ -35,6 +35,23 @@ body {
 }
 
 /* ========================
+   進捗表示の折りたたみ機能
+   ======================== */
+.progress-collapsible {
+  width: auto !important;
+  min-width: 60px;
+  max-width: 90px;
+}
+
+.progress-toggle-btn:hover {
+  background: #e9ecef !important;
+}
+
+.progress-content {
+  transition: all 0.2s ease;
+}
+
+/* ========================
    エリア選択機能のスタイル
    ======================== */
 .area-select {
@@ -74,10 +91,24 @@ body {
    ======================== */
 @media (max-width: 767px) {
   .info {
-    padding: 7px;
+    padding: 6px;
   }
   .progressValue {
-    font-size: 25px;
+    font-size: 20px;
+  }
+  
+  /* 進捗表示のスマホ対応 */
+  .progress-collapsible {
+    min-width: 55px;
+    max-width: 75px;
+  }
+  
+  .progress-content p {
+    font-size: 10px !important;
+  }
+  
+  .progress-content .progressValue {
+    font-size: 16px !important;
   }
   
   /* エリア選択のスマホ対応 */
@@ -103,30 +134,29 @@ body {
 }
 
 /* 非常に小さい画面用 */
-@media (max-width: 480px) {
-  .area-select {
-    min-width: 85px;
-    max-width: 130px;
-  }
-  
-  .area-btn {
-    width: 18%;
-    margin: 1%;
-    padding: 6px 1px;
-    font-size: 10px;
-  }
-  
-  .area-select-header p {
-    font-size: 10px;
-  }
-  
-  .area-toggle-btn {
-    font-size: 11px !important;
+@media (max-width: 320px) {
+  .progress-collapsible {
+    min-width: 45px;
+    max-width: 60px;
     padding: 3px !important;
   }
   
-  .area-control-btns button {
+  .area-select {
+    min-width: 75px;
+    max-width: 110px;
+  }
+  
+  .area-select-header p {
+    font-size: 9px;
+  }
+  
+  .area-toggle-btn {
     font-size: 10px !important;
-    padding: 3px 6px !important;
+    padding: 2px !important;
+  }
+  
+  .area-control-btns button {
+    font-size: 9px !important;
+    padding: 2px 4px !important;
   }
 }
