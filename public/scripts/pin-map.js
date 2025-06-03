@@ -31,7 +31,8 @@ function filterDataByAreaIdAndSmallBlock(data, areaId, smallBlockId) {
 }
 
 function getStatusText(status) {
-
+  // 現在使用中: 0(未), 1(完了), 4(要確認)
+  // 非表示中: 2(異常), 3(予約), 5(異常対応中), 6(削除)
   statusDict = {0: "未", 1: "完了", 2: "異常", 3: "予約", 4: "要確認", 5: "異常対応中", 6: "削除"}
   return statusDict[status] || "不明"  // 未定義ステータスの安全策
 }
@@ -452,8 +453,8 @@ getBoardPins(block, smallBlock).then(function(pins) {
 Promise.all([getProgress(), getProgressCountdown()]).then(function(res) {
   progress = res[0];
   progressCountdown = res[1];
-  progressBox((progress['total']*100).toFixed(2), 'topleft').addTo(map)
-  progressBoxCountdown((parseInt(progressCountdown['total'])), 'topleft').addTo(map)
+  progressBox((progress['total']*100).toFixed(2), 'bottomleft').addTo(map)
+  progressBoxCountdown((parseInt(progressCountdown['total'])), 'bottomleft').addTo(map)
 }).catch((error) => {
   console.error('Error in fetching data:', error);
 });
