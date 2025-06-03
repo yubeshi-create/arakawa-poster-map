@@ -31,8 +31,9 @@ function filterDataByAreaIdAndSmallBlock(data, areaId, smallBlockId) {
 }
 
 function getStatusText(status) {
+
   statusDict = {0: "未", 1: "完了", 2: "異常", 3: "予約", 4: "要確認", 5: "異常対応中", 6: "削除"}
-  return statusDict[status]
+  return statusDict[status] || "不明"  // 未定義ステータスの安全策
 }
 
 function getStatusColor(status) {
@@ -410,115 +411,6 @@ const overlays = {
   '要確認':  L.layerGroup(),
 };
 
-// 現在地マーカー用変数
-let currentLocationMarker = null;
-
-// 現在地アイコンの定義
-const currentLocationIcon = L.icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="blue" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10"/>
-      <circle cx="12" cy="12" r="3" fill="blue"/>
-    </svg>
-  `),
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
-  popupAnchor: [0, -12]
-});
-
-// 現在地を取得して表示
-function getCurrentLocation() {
-  if (!navigator.geolocation) {
-    alert('このブラウザでは位置情報がサポートされていません');
-    return;
-  }
-  
-  console.log('現在地を取得中...');
-  
-  navigator.geolocation.getCurrentPosition(
-    function(position) {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-      const accuracy = position.coords.accuracy;
-      
-      console.log(`現在地: ${lat}, ${lng} (誤差: ${accuracy}m)`);
-      
-      // 既存のマーカーを削除
-      if (currentLocationMarker) {
-        map.removeLayer(currentLocationMarker);
-      }
-      
-      // 現在地マーカーを追加
-      currentLocationMarker = L.marker([lat, lng], {
-        icon: currentLocationIcon
-      }).addTo(map);
-      
-      currentLocationMarker.bindPopup(`
-        <b>📍 現在地</b><br>
-        緯度: ${lat.toFixed(6)}<br>
-        経度: ${lng.toFixed(6)}<br>
-        精度: ${accuracy.toFixed(0)}m<br>
-        <small>${new Date().toLocaleTimeString()}</small>
-      `);
-      
-      // 現在地を中心に移動
-      map.setView([lat, lng], 16);
-      
-    },
-    function(error) {
-      console.error('位置情報取得エラー:', error);
-      
-      let errorMessage = '';
-      switch(error.code) {
-        case error.PERMISSION_DENIED:
-          errorMessage = '位置情報の利用が拒否されました。\n\nブラウザの設定で位置情報を許可してください。';
-          break;
-        case error.POSITION_UNAVAILABLE:
-          errorMessage = '位置情報を取得できませんでした。\n\nGPS信号の良い場所で再試行してください。';
-          break;
-        case error.TIMEOUT:
-          errorMessage = '位置情報の取得がタイムアウトしました。\n\nしばらく待ってから再試行してください。';
-          break;
-        default:
-          errorMessage = '位置情報の取得中にエラーが発生しました。';
-          break;
-      }
-      
-      alert(errorMessage);
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 300000  // 5分間キャッシュ
-    }
-  );
-}
-
-// 現在地ボタンを追加
-const locationControl = L.Control.extend({
-  onAdd: function(map) {
-    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-    
-    const locationBtn = L.DomUtil.create('button', '', container);
-    locationBtn.innerHTML = '📍';
-    locationBtn.style.backgroundColor = 'white';
-    locationBtn.style.border = '2px solid rgba(0,0,0,0.2)';
-    locationBtn.style.width = '40px';
-    locationBtn.style.height = '40px';
-    locationBtn.style.fontSize = '18px';
-    locationBtn.style.cursor = 'pointer';
-    locationBtn.style.borderRadius = '4px';
-    locationBtn.title = '現在地を表示';
-    
-    locationBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      getCurrentLocation();
-    });
-    
-    return container;
-  }
-});
-
 // ========================
 // 地図初期化とデータ読み込み
 // ========================
@@ -534,10 +426,6 @@ var map = L.map('map', {
 osm.addTo(map);
 const layerControl = L.control.layers(baseLayers, overlays).addTo(map);
 
-// 現在地ボタンを地図に追加
-map.addControl(new locationControl({ position: 'topleft' }));
-
-map.on('locationfound', onLocationFound);
 map.on('locationerror', onLocationError);
 
 // 荒川区の地図を確実に表示
@@ -564,8 +452,8 @@ getBoardPins(block, smallBlock).then(function(pins) {
 Promise.all([getProgress(), getProgressCountdown()]).then(function(res) {
   progress = res[0];
   progressCountdown = res[1];
-  progressBox((progress['total']*100).toFixed(2), 'topright').addTo(map)
-  progressBoxCountdown((parseInt(progressCountdown['total'])), 'topright').addTo(map)
+  progressBox((progress['total']*100).toFixed(2), 'topleft').addTo(map)
+  progressBoxCountdown((parseInt(progressCountdown['total'])), 'topleft').addTo(map)
 }).catch((error) => {
   console.error('Error in fetching data:', error);
 });
