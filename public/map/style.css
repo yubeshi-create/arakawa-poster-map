@@ -15,7 +15,7 @@ body {
   padding: 10px;
   border: 1px solid #5d5d5d;
   border-radius: 4px;
-  width: 72px;
+  width: 80px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -34,11 +34,99 @@ body {
   margin: 0;
 }
 
+/* ========================
+   エリア選択機能のスタイル
+   ======================== */
+.area-select {
+  min-width: 110px;
+  max-width: 220px;
+  width: auto !important;
+}
+
+.area-select-header p {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.area-buttons-container {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.area-btn {
+  transition: all 0.2s ease;
+}
+
+.area-btn:hover {
+  background: #e6f3ff !important;
+  border-color: #007cba !important;
+}
+
+.area-toggle-btn:hover {
+  background: #e9ecef !important;
+}
+
+.area-control-btns button:hover {
+  opacity: 0.8;
+}
+
+/* ========================
+   メディアクエリ
+   ======================== */
 @media (max-width: 767px) {
   .info {
     padding: 7px;
   }
   .progressValue {
     font-size: 25px;
+  }
+  
+  /* エリア選択のスマホ対応 */
+  .area-select {
+    min-width: 100px;
+    max-width: 160px;
+  }
+  
+  .area-buttons-container {
+    max-height: 150px;
+  }
+  
+  .area-btn {
+    width: 20%;
+    margin: 1.5%;
+    padding: 8px 2px;
+    font-size: 12px;
+  }
+  
+  .area-select-header p {
+    font-size: 11px;
+  }
+}
+
+/* 非常に小さい画面用 */
+@media (max-width: 480px) {
+  .area-select {
+    min-width: 85px;
+    max-width: 130px;
+  }
+  
+  .area-btn {
+    width: 18%;
+    margin: 1%;
+    padding: 6px 1px;
+    font-size: 10px;
+  }
+  
+  .area-select-header p {
+    font-size: 10px;
+  }
+  
+  .area-toggle-btn {
+    font-size: 11px !important;
+    padding: 3px !important;
+  }
+  
+  .area-control-btns button {
+    font-size: 10px !important;
+    padding: 3px 6px !important;
   }
 }
