@@ -1,3 +1,6 @@
+let selectedAreas = new Set();
+let isAreaSelectorExpanded = false;
+
 function getBlockFromUrlParam() {
   const params = new URL(document.location.href).searchParams
   const block = params.get("block")
@@ -175,6 +178,226 @@ function onLocationError(e) {
   map.setView(latlong, zoom);
 }
 
+// ========================
+// エリア選択機能
+// ========================
+
+// エリア選択コントロールを作成
+function areaSelectBox(position) {
+  var control = L.control({position: position});
+  control.onAdd = function () {
+    var div = L.DomUtil.create('div', 'info area-select');
+    
+    // ヘッダー部分（常に表示）
+    var header = L.DomUtil.create('div', 'area-select-header', div);
+    header.innerHTML = `
+      <p style="margin: 0 0 2px 0; font-weight: bold;">エリア選択</p>
+      <p style="margin: 0; font-size: 12px;" id="selected-count">選択中: 0個</p>
+    `;
+    
+    // 展開/折りたたみボタン
+    var toggleBtn = L.DomUtil.create('button', 'area-toggle-btn', div);
+    toggleBtn.innerHTML = '▼';
+    toggleBtn.style.cssText = `
+      width: 100%; 
+      margin-top: 5px; 
+      padding: 4px; 
+      border: 1px solid #ccc; 
+      background: #f9f9f9; 
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 12px;
+    `;
+    
+    // エリアボタンコンテナ（展開時に表示）
+    var areaContainer = L.DomUtil.create('div', 'area-buttons-container', div);
+    areaContainer.style.cssText = `
+      display: none; 
+      margin-top: 5px; 
+      max-height: 200px; 
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      padding: 5px;
+      background: white;
+    `;
+    
+    // 32個のエリアボタンを生成
+    for (let i = 1; i <= 32; i++) {
+      var areaBtn = L.DomUtil.create('button', 'area-btn', areaContainer);
+      areaBtn.innerHTML = i;
+      areaBtn.dataset.area = i;
+      areaBtn.style.cssText = `
+        width: 22%; 
+        margin: 1%; 
+        padding: 6px 2px; 
+        border: 1px solid #ccc; 
+        background: white; 
+        cursor: pointer;
+        border-radius: 3px;
+        font-size: 11px;
+        display: inline-block;
+      `;
+      
+      // エリアボタンクリック処理
+      areaBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleAreaSelection(parseInt(this.dataset.area), this);
+      });
+    }
+    
+    // 全選択/全解除ボタン
+    var controlBtns = L.DomUtil.create('div', 'area-control-btns', areaContainer);
+    controlBtns.style.cssText = 'margin-top: 5px; text-align: center;';
+    
+    var selectAllBtn = L.DomUtil.create('button', '', controlBtns);
+    selectAllBtn.innerHTML = '全選択';
+    selectAllBtn.style.cssText = `
+      margin-right: 5px; 
+      padding: 4px 8px; 
+      border: 1px solid #007cba; 
+      background: #007cba; 
+      color: white; 
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 11px;
+    `;
+    
+    var clearAllBtn = L.DomUtil.create('button', '', controlBtns);
+    clearAllBtn.innerHTML = '全解除';
+    clearAllBtn.style.cssText = `
+      padding: 4px 8px; 
+      border: 1px solid #dc3545; 
+      background: #dc3545; 
+      color: white; 
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 11px;
+    `;
+    
+    // イベントリスナー
+    toggleBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      toggleAreaSelector(areaContainer, toggleBtn);
+    });
+    
+    selectAllBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      selectAllAreas();
+    });
+    
+    clearAllBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      clearAllAreas();
+    });
+    
+    // マップクリック時に折りたたみ
+    L.DomEvent.disableClickPropagation(div);
+    
+    return div;
+  };
+  return control;
+}
+
+// エリアセレクターの展開/折りたたみ
+function toggleAreaSelector(container, toggleBtn) {
+  isAreaSelectorExpanded = !isAreaSelectorExpanded;
+  if (isAreaSelectorExpanded) {
+    container.style.display = 'block';
+    toggleBtn.innerHTML = '▲';
+  } else {
+    container.style.display = 'none';
+    toggleBtn.innerHTML = '▼';
+  }
+}
+
+// エリア選択の切り替え
+function toggleAreaSelection(areaNum, btnElement) {
+  if (selectedAreas.has(areaNum)) {
+    selectedAreas.delete(areaNum);
+    btnElement.style.background = 'white';
+    btnElement.style.color = 'black';
+    btnElement.style.borderColor = '#ccc';
+  } else {
+    selectedAreas.add(areaNum);
+    btnElement.style.background = '#007cba';
+    btnElement.style.color = 'white';
+    btnElement.style.borderColor = '#007cba';
+  }
+  updateSelectedCount();
+  filterPinsBySelectedAreas();
+}
+
+// 全選択
+function selectAllAreas() {
+  selectedAreas.clear();
+  for (let i = 1; i <= 32; i++) {
+    selectedAreas.add(i);
+  }
+  updateAreaButtonStyles();
+  updateSelectedCount();
+  filterPinsBySelectedAreas();
+}
+
+// 全解除
+function clearAllAreas() {
+  selectedAreas.clear();
+  updateAreaButtonStyles();
+  updateSelectedCount();
+  filterPinsBySelectedAreas();
+}
+
+// ボタンスタイル更新
+function updateAreaButtonStyles() {
+  document.querySelectorAll('.area-btn').forEach(btn => {
+    const areaNum = parseInt(btn.dataset.area);
+    if (selectedAreas.has(areaNum)) {
+      btn.style.background = '#007cba';
+      btn.style.color = 'white';
+      btn.style.borderColor = '#007cba';
+    } else {
+      btn.style.background = 'white';
+      btn.style.color = 'black';
+      btn.style.borderColor = '#ccc';
+    }
+  });
+}
+
+// 選択数表示更新
+function updateSelectedCount() {
+  const countElement = document.getElementById('selected-count');
+  if (countElement) {
+    countElement.textContent = `選択中: ${selectedAreas.size}個`;
+  }
+}
+
+// 選択されたエリアでピンをフィルタリング
+function filterPinsBySelectedAreas() {
+  // 全レイヤーをクリア
+  Object.values(overlays).forEach(layer => {
+    layer.clearLayers();
+  });
+  
+  // フィルタリング実行
+  let filteredPins = allBoardPins;
+  
+  if (selectedAreas.size > 0) {
+    filteredPins = allBoardPins.filter(pin => {
+      const areaNum = parseInt(pin.name.split('-')[0]);
+      return selectedAreas.has(areaNum);
+    });
+  }
+  
+  // フィルタリング後のピンを再描画
+  loadBoardPins(filteredPins, overlays['完了'], 1);
+  loadBoardPins(filteredPins, overlays['要確認'], 4);
+  loadBoardPins(filteredPins, overlays['未'], 0);
+}
+
+// ========================
+// 地図とレイヤー設定
+// ========================
+
 const baseLayers = {
   'OpenStreetMap': osm,
   'Google Map': googleMap,
@@ -184,11 +407,7 @@ const baseLayers = {
 const overlays = {
   '未':  L.layerGroup(),
   '完了':  L.layerGroup(),
-  '異常':  L.layerGroup(),
   '要確認':  L.layerGroup(),
-  '異常対応中':  L.layerGroup(),
-  '削除':  L.layerGroup(),
-  '期日前投票所':  L.layerGroup(),
 };
 
 // 現在地マーカー用変数
@@ -300,15 +519,15 @@ const locationControl = L.Control.extend({
   }
 });
 
+// ========================
+// 地図初期化とデータ読み込み
+// ========================
+
 var map = L.map('map', {
   layers: [
     overlays['未'],
     overlays['完了'],
-    overlays['要確認'],
-    overlays['異常'],
-    overlays['異常対応中'],
-    overlays['削除'],
-    overlays['期日前投票所']
+    overlays['要確認']
   ],
   preferCanvas:true,
 });
@@ -328,29 +547,28 @@ const block = getBlockFromUrlParam()
 const smallBlock= getSmallBlockFromUrlParam()
 let allBoardPins;
 
-// 掲示板ピンの読み込み
+// 掲示板ピンの読み込み（エリア選択機能付き）
 getBoardPins(block, smallBlock).then(function(pins) {
-  allBoardPins = pins
-  loadBoardPins(allBoardPins, overlays['削除'], 6);
+  allBoardPins = pins;
+  
+  // 初期ピン表示（全て表示）
   loadBoardPins(allBoardPins, overlays['完了'], 1);
-  loadBoardPins(allBoardPins, overlays['異常'], 2);
   loadBoardPins(allBoardPins, overlays['要確認'], 4);
-  loadBoardPins(allBoardPins, overlays['異常対応中'], 5);
   loadBoardPins(allBoardPins, overlays['未'], 0);
+  
+  // エリア選択コントロールを追加（右上の進捗表示の下）
+  areaSelectBox('topright').addTo(map);
 });
 
 // 進捗表示
 Promise.all([getProgress(), getProgressCountdown()]).then(function(res) {
   progress = res[0];
   progressCountdown = res[1];
-  progressBox((progress['total']*100).toFixed(2), 'topleft').addTo(map)
-  progressBoxCountdown((parseInt(progressCountdown['total'])), 'topleft').addTo(map)
+  progressBox((progress['total']*100).toFixed(2), 'topright').addTo(map)
+  progressBoxCountdown((parseInt(progressCountdown['total'])), 'topright').addTo(map)
 }).catch((error) => {
   console.error('Error in fetching data:', error);
 });
-
-// 期日前投票所とarakawa境界線の読み込み
-loadVoteVenuePins(overlays['期日前投票所']);
 
 // 荒川区が指定された場合のみ境界線を表示
 if (block === 'arakawa') {
