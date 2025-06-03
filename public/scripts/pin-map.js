@@ -1,4 +1,4 @@
-let selectedAreas = new Set();
+let selectedAreas = new Set([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32]); // 初期状態で全選択
 let isAreaSelectorExpanded = false;
 
 function getBlockFromUrlParam() {
@@ -373,6 +373,56 @@ function updateSelectedCount() {
   }
 }
 
+// 折りたたみ可能な進捗表示を作成
+function collapsibleProgressBox(progressValue, countdownValue, position) {
+  var control = L.control({position: position});
+  control.onAdd = function () {
+    var div = L.DomUtil.create('div', 'info progress-collapsible');
+    
+    // 折りたたみボタン
+    var toggleBtn = L.DomUtil.create('button', 'progress-toggle-btn', div);
+    toggleBtn.innerHTML = '📊';
+    toggleBtn.style.cssText = `
+      width: 100%; 
+      padding: 4px; 
+      border: 1px solid #ccc; 
+      background: #f9f9f9; 
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 14px;
+      margin-bottom: 3px;
+    `;
+    
+    // 進捗内容（展開時に表示）
+    var contentDiv = L.DomUtil.create('div', 'progress-content', div);
+    contentDiv.style.cssText = 'display: block;';
+    contentDiv.innerHTML = `
+      <p style="margin: 0 0 2px 0; font-weight: bold; font-size: 11px;">完了率</p>
+      <p style="margin: 0 0 5px 0;"><span class="progressValue" style="font-size: 18px;">${progressValue}</span><span style="font-size: 11px;">%</span></p>
+      <p style="margin: 0 0 2px 0; font-weight: bold; font-size: 11px;">残り</p>
+      <p style="margin: 0;"><span class="progressValue" style="font-size: 18px;">${countdownValue}</span><span style="font-size: 11px;">ヶ所</span></p>
+    `;
+    
+    // 折りたたみイベント
+    let isExpanded = true;
+    toggleBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (isExpanded) {
+        contentDiv.style.display = 'none';
+        toggleBtn.innerHTML = '📊';
+      } else {
+        contentDiv.style.display = 'block';
+        toggleBtn.innerHTML = '📊';
+      }
+      isExpanded = !isExpanded;
+    });
+    
+    L.DomEvent.disableClickPropagation(div);
+    return div;
+  };
+  return control;
+}
+
 // 選択されたエリアでピンをフィルタリング
 function filterPinsBySelectedAreas() {
   // 全レイヤーをクリア
@@ -383,7 +433,7 @@ function filterPinsBySelectedAreas() {
   // フィルタリング実行
   let filteredPins = allBoardPins;
   
-  if (selectedAreas.size > 0) {
+  if (selectedAreas.size > 0 && selectedAreas.size < 32) {
     filteredPins = allBoardPins.filter(pin => {
       const areaNum = parseInt(pin.name.split('-')[0]);
       return selectedAreas.has(areaNum);
@@ -446,15 +496,20 @@ getBoardPins(block, smallBlock).then(function(pins) {
   loadBoardPins(allBoardPins, overlays['未'], 0);
   
   // エリア選択コントロールを追加（右上の進捗表示の下）
-  areaSelectBox('topright').addTo(map);
+  const areaControl = areaSelectBox('topright').addTo(map);
+  
+  // 初期状態を正しく反映（全選択状態）
+  setTimeout(() => {
+    updateSelectedCount();
+    updateAreaButtonStyles();
+  }, 100);
 });
 
-// 進捗表示
+// 進捗表示（折りたたみ式）
 Promise.all([getProgress(), getProgressCountdown()]).then(function(res) {
   progress = res[0];
   progressCountdown = res[1];
-  progressBox((progress['total']*100).toFixed(2), 'bottomleft').addTo(map)
-  progressBoxCountdown((parseInt(progressCountdown['total'])), 'bottomleft').addTo(map)
+  collapsibleProgressBox((progress['total']*100).toFixed(2), parseInt(progressCountdown['total']), 'bottomleft').addTo(map);
 }).catch((error) => {
   console.error('Error in fetching data:', error);
 });
