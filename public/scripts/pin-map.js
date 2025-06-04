@@ -224,33 +224,9 @@ function areaSelectBox(position) {
       background: white;
     `;
     
-    // 32個のエリアボタンを生成
-    for (let i = 1; i <= 32; i++) {
-      var areaBtn = L.DomUtil.create('button', 'area-btn', areaContainer);
-      areaBtn.innerHTML = i;
-      areaBtn.dataset.area = i;
-      areaBtn.style.cssText = `
-        width: 22%; 
-        margin: 1%; 
-        padding: 6px 2px; 
-        border: 1px solid #ccc; 
-        background: white; 
-        cursor: pointer;
-        border-radius: 3px;
-        font-size: 11px;
-        display: inline-block;
-      `;
-      
-      // エリアボタンクリック処理
-      areaBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        toggleAreaSelection(parseInt(this.dataset.area), this);
-      });
-    }
-    
-    // 全選択/全解除ボタン
+    // 全選択/全解除ボタン（エリアボタンの上に配置）
     var controlBtns = L.DomUtil.create('div', 'area-control-btns', areaContainer);
-    controlBtns.style.cssText = 'margin-top: 5px; text-align: center;';
+    controlBtns.style.cssText = 'margin-bottom: 5px; text-align: center;';
     
     var selectAllBtn = L.DomUtil.create('button', '', controlBtns);
     selectAllBtn.innerHTML = '全選択';
@@ -276,6 +252,30 @@ function areaSelectBox(position) {
       border-radius: 3px;
       font-size: 11px;
     `;
+    
+    // 32個のエリアボタンを生成
+    for (let i = 1; i <= 32; i++) {
+      var areaBtn = L.DomUtil.create('button', 'area-btn', areaContainer);
+      areaBtn.innerHTML = i;
+      areaBtn.dataset.area = i;
+      areaBtn.style.cssText = `
+        width: 22%; 
+        margin: 1%; 
+        padding: 6px 2px; 
+        border: 1px solid #ccc; 
+        background: white; 
+        cursor: pointer;
+        border-radius: 3px;
+        font-size: 11px;
+        display: inline-block;
+      `;
+      
+      // エリアボタンクリック処理
+      areaBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleAreaSelection(parseInt(this.dataset.area), this);
+      });
+    }
     
     // イベントリスナー
     toggleBtn.addEventListener('click', function(e) {
@@ -431,14 +431,15 @@ function filterPinsBySelectedAreas() {
   });
   
   // フィルタリング実行
-  let filteredPins = allBoardPins;
+  let filteredPins = [];
   
-  if (selectedAreas.size > 0 && selectedAreas.size < 32) {
+  if (selectedAreas.size > 0) {
     filteredPins = allBoardPins.filter(pin => {
       const areaNum = parseInt(pin.name.split('-')[0]);
       return selectedAreas.has(areaNum);
     });
   }
+  // selectedAreas.size が 0 の場合は filteredPins は空配列のまま（何も表示しない）
   
   // フィルタリング後のピンを再描画
   loadBoardPins(filteredPins, overlays['完了'], 1);
