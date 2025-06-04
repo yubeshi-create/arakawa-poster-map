@@ -47,12 +47,12 @@ body {
 
 /* Leafletコントロールの左下位置を確実に指定 */
 .leaflet-bottom.leaflet-left {
-  bottom: 10px !important;
+  bottom: 50px !important;
   left: 10px !important;
 }
 
 .leaflet-control-container .leaflet-bottom .leaflet-control {
-  margin-bottom: 10px !important;
+  margin-bottom: 15px !important;
 }
 
 /* 進捗表示の視認性向上 */
