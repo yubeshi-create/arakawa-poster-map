@@ -19,6 +19,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  box-sizing: border-box;
 }
 .info p {
   padding: 0;
@@ -41,6 +42,24 @@ body {
   width: auto !important;
   min-width: 60px;
   max-width: 90px;
+  box-sizing: border-box;
+}
+
+/* Leafletコントロールの幅を強制的に設定 */
+.leaflet-control .info {
+  box-sizing: border-box !important;
+}
+
+.leaflet-control .info.progress-collapsible {
+  width: auto !important;
+  min-width: 60px !important;
+  max-width: 90px !important;
+}
+
+.leaflet-control .info.area-select {
+  width: auto !important;
+  min-width: 110px !important;
+  max-width: 220px !important;
 }
 
 .progress-toggle-btn:hover {
@@ -58,6 +77,7 @@ body {
   min-width: 110px;
   max-width: 220px;
   width: auto !important;
+  box-sizing: border-box;
 }
 
 .area-select-header p {
@@ -91,16 +111,16 @@ body {
    ======================== */
 @media (max-width: 767px) {
   .info {
-    padding: 6px;
+    padding: 6px !important;
   }
   .progressValue {
-    font-size: 20px;
+    font-size: 20px !important;
   }
   
   /* 進捗表示のスマホ対応 */
   .progress-collapsible {
-    min-width: 55px;
-    max-width: 75px;
+    min-width: 55px !important;
+    max-width: 75px !important;
   }
   
   .progress-content p {
@@ -113,50 +133,131 @@ body {
   
   /* エリア選択のスマホ対応 */
   .area-select {
-    min-width: 100px;
-    max-width: 160px;
+    min-width: 100px !important;
+    max-width: 160px !important;
   }
   
   .area-buttons-container {
-    max-height: 150px;
+    max-height: 150px !important;
   }
   
   .area-btn {
-    width: 20%;
-    margin: 1.5%;
-    padding: 8px 2px;
-    font-size: 12px;
+    width: 20% !important;
+    margin: 1.5% !important;
+    padding: 8px 2px !important;
+    font-size: 12px !important;
   }
   
   .area-select-header p {
-    font-size: 11px;
+    font-size: 11px !important;
   }
 }
 
-/* 非常に小さい画面用 */
-@media (max-width: 320px) {
-  .progress-collapsible {
-    min-width: 45px;
-    max-width: 60px;
+/* iPhone8対応（375px幅）- より強力なセレクタ */
+@media screen and (max-width: 375px) {
+  /* 進捗表示 */
+  .leaflet-control .info.progress-collapsible {
+    min-width: 45px !important;
+    max-width: 60px !important;
     padding: 3px !important;
+    font-size: 9px !important;
+    width: 45px !important;
   }
   
-  .area-select {
-    min-width: 75px;
-    max-width: 110px;
+  .progress-collapsible .progress-toggle-btn {
+    font-size: 11px !important;
+    padding: 2px !important;
+    margin-bottom: 2px !important;
   }
   
-  .area-select-header p {
-    font-size: 9px;
+  .progress-collapsible .progress-content p {
+    font-size: 8px !important;
+    margin: 0 0 1px 0 !important;
+    line-height: 1.1 !important;
   }
   
-  .area-toggle-btn {
+  .progress-collapsible .progress-content .progressValue {
+    font-size: 12px !important;
+  }
+  
+  /* エリア選択 */
+  .leaflet-control .info.area-select {
+    min-width: 80px !important;
+    max-width: 120px !important;
+    padding: 5px !important;
+    width: 80px !important;
+  }
+  
+  .area-select .area-select-header p {
+    font-size: 9px !important;
+    margin: 0 0 1px 0 !important;
+  }
+  
+  .area-select .area-toggle-btn {
     font-size: 10px !important;
     padding: 2px !important;
   }
   
-  .area-control-btns button {
+  .area-select .area-btn {
+    width: 18% !important;
+    margin: 1% !important;
+    padding: 5px 1px !important;
     font-size: 9px !important;
+  }
+  
+  .area-select .area-control-btns button {
+    font-size: 8px !important;
     padding: 2px 4px !important;
+    margin: 1px !important;
+  }
+  
+  .area-select .area-buttons-container {
+    max-height: 130px !important;
+    padding: 3px !important;
+  }
+}
+
+/* 非常に小さい画面用（320px以下）- より強力なセレクタ */
+@media screen and (max-width: 320px) {
+  .leaflet-control .info.progress-collapsible {
+    min-width: 40px !important;
+    max-width: 55px !important;
+    padding: 2px !important;
+    width: 40px !important;
+  }
+  
+  .progress-collapsible .progress-toggle-btn {
+    font-size: 10px !important;
+    padding: 1px !important;
+  }
+  
+  .progress-collapsible .progress-content p {
+    font-size: 7px !important;
+  }
+  
+  .progress-collapsible .progress-content .progressValue {
+    font-size: 11px !important;
+  }
+  
+  .leaflet-control .info.area-select {
+    min-width: 70px !important;
+    max-width: 100px !important;
+    padding: 3px !important;
+    width: 70px !important;
+  }
+  
+  .area-select .area-select-header p {
+    font-size: 8px !important;
+  }
+  
+  .area-select .area-btn {
+    width: 16% !important;
+    font-size: 8px !important;
+    padding: 4px 1px !important;
+  }
+  
+  .area-select .area-control-btns button {
+    font-size: 7px !important;
+    padding: 1px 3px !important;
   }
 }
