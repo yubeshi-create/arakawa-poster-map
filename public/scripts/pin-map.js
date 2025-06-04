@@ -31,8 +31,8 @@ function filterDataByAreaIdAndSmallBlock(data, areaId, smallBlockId) {
 }
 
 function getStatusText(status) {
-  // 現在使用中: 0(未), 1(完了), 4(要確認)
-  // 非表示中: 2(異常), 3(予約), 5(異常対応中), 6(削除)
+  // 現在使用中: 0(未), 1(完了)
+  // 非表示中: 2(異常), 3(予約), 4(要確認), 5(異常対応中), 6(削除)
   statusDict = {0: "未", 1: "完了", 2: "異常", 3: "予約", 4: "要確認", 5: "異常対応中", 6: "削除"}
   return statusDict[status] || "不明"  // 未定義ステータスの安全策
 }
@@ -172,7 +172,7 @@ function onLocationError(e) {
   let latlong, zoom;
   if (block == null) {
     latlong = [35.7368, 139.7832],  // デフォルトも荒川区に設定
-    zoom = 14
+    zoom = 12
   } else {
     latlong = [mapConfig[block]['lat'], mapConfig[block]['long']]
     zoom = mapConfig[block]['zoom']
@@ -443,7 +443,6 @@ function filterPinsBySelectedAreas() {
   
   // フィルタリング後のピンを再描画
   loadBoardPins(filteredPins, overlays['完了'], 1);
-  loadBoardPins(filteredPins, overlays['要確認'], 4);
   loadBoardPins(filteredPins, overlays['未'], 0);
 }
 
@@ -460,7 +459,6 @@ const baseLayers = {
 const overlays = {
   '未':  L.layerGroup(),
   '完了':  L.layerGroup(),
-  '要確認':  L.layerGroup(),
 };
 
 // ========================
@@ -470,8 +468,7 @@ const overlays = {
 var map = L.map('map', {
   layers: [
     overlays['未'],
-    overlays['完了'],
-    overlays['要確認']
+    overlays['完了']
   ],
   preferCanvas:true,
 });
@@ -493,7 +490,6 @@ getBoardPins(block, smallBlock).then(function(pins) {
   
   // 初期ピン表示（全て表示）
   loadBoardPins(allBoardPins, overlays['完了'], 1);
-  loadBoardPins(allBoardPins, overlays['要確認'], 4);
   loadBoardPins(allBoardPins, overlays['未'], 0);
   
   // エリア選択コントロールを追加（右上の進捗表示の下）
