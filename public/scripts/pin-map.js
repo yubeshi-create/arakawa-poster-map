@@ -135,7 +135,7 @@ function onLocationError(e) {
     'arakawa': {
       'lat': 35.7368,
       'long': 139.7832,
-      'zoom': 14,
+      'zoom': 11,
     },
     '23-west': {
       'lat': 35.6861171,
@@ -172,7 +172,7 @@ function onLocationError(e) {
   let latlong, zoom;
   if (block == null) {
     latlong = [35.7368, 139.7832],  // デフォルトも荒川区に設定
-    zoom = 12
+    zoom = 11
   } else {
     latlong = [mapConfig[block]['lat'], mapConfig[block]['long']]
     zoom = mapConfig[block]['zoom']
