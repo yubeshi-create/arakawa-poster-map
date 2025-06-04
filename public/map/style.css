@@ -45,9 +45,20 @@ body {
   box-sizing: border-box;
 }
 
-/* Leafletコントロールの幅を強制的に設定 */
-.leaflet-control .info {
-  box-sizing: border-box !important;
+/* Leafletコントロールの左下位置を確実に指定 */
+.leaflet-bottom.leaflet-left {
+  bottom: 10px !important;
+  left: 10px !important;
+}
+
+.leaflet-control-container .leaflet-bottom .leaflet-control {
+  margin-bottom: 10px !important;
+}
+
+/* 進捗表示の視認性向上 */
+.progress-collapsible {
+  z-index: 1000 !important;
+  position: relative !important;
 }
 
 .leaflet-control .info.progress-collapsible {
@@ -155,65 +166,70 @@ body {
 
 /* iPhone8対応（375px幅）- より強力なセレクタ */
 @media screen and (max-width: 375px) {
-  /* 進捗表示 */
+  /* 進捗表示 - サイズを大きくして見やすく */
   .leaflet-control .info.progress-collapsible {
-    min-width: 45px !important;
-    max-width: 60px !important;
-    padding: 3px !important;
-    font-size: 9px !important;
-    width: 45px !important;
+    min-width: 55px !important;
+    max-width: 75px !important;
+    padding: 5px !important;
+    font-size: 10px !important;
+    width: 55px !important;
+    background: white !important;
+    border: 2px solid #5d5d5d !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
   }
   
   .progress-collapsible .progress-toggle-btn {
-    font-size: 11px !important;
-    padding: 2px !important;
-    margin-bottom: 2px !important;
+    font-size: 14px !important;
+    padding: 4px !important;
+    margin-bottom: 3px !important;
+    background: #f0f0f0 !important;
+    border: 1px solid #ccc !important;
   }
   
   .progress-collapsible .progress-content p {
-    font-size: 8px !important;
-    margin: 0 0 1px 0 !important;
-    line-height: 1.1 !important;
+    font-size: 10px !important;
+    margin: 0 0 2px 0 !important;
+    line-height: 1.2 !important;
   }
   
   .progress-collapsible .progress-content .progressValue {
-    font-size: 12px !important;
+    font-size: 16px !important;
   }
   
   /* エリア選択 */
   .leaflet-control .info.area-select {
-    min-width: 80px !important;
-    max-width: 120px !important;
-    padding: 5px !important;
-    width: 80px !important;
+    min-width: 85px !important;
+    max-width: 130px !important;
+    padding: 6px !important;
+    width: 85px !important;
   }
   
   .area-select .area-select-header p {
-    font-size: 9px !important;
-    margin: 0 0 1px 0 !important;
+    font-size: 10px !important;
+    margin: 0 0 2px 0 !important;
   }
   
   .area-select .area-toggle-btn {
-    font-size: 10px !important;
-    padding: 2px !important;
+    font-size: 11px !important;
+    padding: 3px !important;
   }
   
   .area-select .area-btn {
     width: 18% !important;
     margin: 1% !important;
-    padding: 5px 1px !important;
-    font-size: 9px !important;
+    padding: 6px 1px !important;
+    font-size: 10px !important;
   }
   
   .area-select .area-control-btns button {
-    font-size: 8px !important;
-    padding: 2px 4px !important;
+    font-size: 9px !important;
+    padding: 3px 5px !important;
     margin: 1px !important;
   }
   
   .area-select .area-buttons-container {
-    max-height: 130px !important;
-    padding: 3px !important;
+    max-height: 140px !important;
+    padding: 4px !important;
   }
 }
 
