@@ -47,7 +47,7 @@ body {
 
 /* Leafletコントロールの左下位置を確実に指定 */
 .leaflet-bottom.leaflet-left {
-  bottom: 50px !important;
+  bottom: 65px !important;
   left: 10px !important;
 }
 
